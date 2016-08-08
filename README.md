@@ -45,7 +45,37 @@ This will create a `buffer.php` in your config directory. Here you **must** ente
 ## Example Usage
 
 ``` php
-// soon
+use Mbarwick83\Buffer\Buffer;
+
+// Get login url:
+public function index(Buffer $buffer)
+{
+	return $buffer->getLoginUrl();
+}
+
+// Get access token on callback, once user has authorized via above method
+public function callback(Request $request, Buffer $buffer)
+{
+	$response = $buffer->getAccessToken($request->code);
+
+	if (isset($response['code']))
+        throw new \Exception($response['error_message'], $response['code']);
+
+	return $buffer->getUserDetails($response['access_token']);
+}
+```
+
+Those are the only three custom classes for the API package (i.e. `getLoginUrl()`, `getAccessToken()`, and `getUserDetails()`. The rest of the API works with `POST` and `GET` requests based on Buffers's end points to keep this package ***super simple***. You can view all the end points here [https://buffer.com/developers/api](https://buffer.com/developers/api).
+
+All you need to do is specify if the request is a `POST` or `GET` request, specify **just the end point** and any URL queries that are required (in an array).
+For example:
+
+```php
+public function index(Buffer $buffer)
+{
+    $user_profiles = $this->buffer->get('1/profiles.json', ['access_token' => $access_token]);
+    return $user_profiles;
+}
 ```
 
 **VERY SIMPLE AND EASY!**

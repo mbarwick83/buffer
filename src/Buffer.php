@@ -8,7 +8,8 @@ use GuzzleHttp\Exception\ClientException;
 class Buffer
 {
     const API_HOST = 'https://api.bufferapp.com/';
-    const TIMEOUT = 2.0;
+    const LOGIN_HOST = 'https://bufferapp.com/';
+    const TIMEOUT = 4.0;
 
     protected $client;
     protected $client_key;
@@ -34,7 +35,7 @@ class Buffer
     */
     public function getLoginUrl()
     {
-	   return $this->url('oauth/authorize', ['scope' => $this->scopes]);
+	   return $this->url('oauth2/authorize', self::LOGIN_HOST);
     }
 
     /**
@@ -44,18 +45,28 @@ class Buffer
     */
     public function getAccessToken($code)
     {
-	   return $this->post('oauth/access_token', true, ['code' => $code]);
+	   return $this->post('1/oauth2/token.json', true, ['code' => $code]);
+    }
+
+    /**
+     * Get user details from access token
+     */
+    public function getUserDetails($access_token)
+    {
+        $account = $this->get('1/user.json', ['access_token' => $access_token]);
+        return array_merge($account, ['access_token' => $access_token]);
     }
 
     /**
     * Make URLs for user browser navigation.
     *
     * @param string $path
+    * @param string $host [base url]
     * @param array  $parameters
     *
     * @return string
     */
-    protected function url($path, array $parameters = null)
+    protected function url($path, $host, array $parameters = null)
     {
     	$query = [
             'client_id' => $this->client_key,
@@ -68,7 +79,7 @@ class Buffer
 
         $query = http_build_query($query);
 
-        return sprintf('%s%s?%s', self::API_HOST, $path, $query);
+        return sprintf('%s%s?%s', $host, $path, $query);
     }
 
     /**
