@@ -9,7 +9,7 @@ class Buffer
 {
     const API_HOST = 'https://api.bufferapp.com/';
     const LOGIN_HOST = 'https://bufferapp.com/';
-    const TIMEOUT = 4.0;
+    const TIMEOUT = 6.0;
 
     protected $client;
     protected $client_key;
