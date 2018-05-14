@@ -28,8 +28,9 @@ class Buffer
         $this->retries = config('buffer.retries');
 
         $handlerstack = HandlerStack::create();
-        $handlerstack->push(Middleware::retry(function($retry, $request, $value, $reason){
-            if($value!==null){ return false; }
+        $handlerstack->push(Middleware::retry(function($retry, $request, $value, $reason)
+        {
+            if ($value !== null) { return false; }
             return $retry < $this->retries;
         }));
 
