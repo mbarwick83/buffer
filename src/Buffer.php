@@ -4,33 +4,46 @@ namespace Mbarwick83\Buffer;
 
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Middleware;
 
 class Buffer
 {
     const API_HOST = 'https://api.bufferapp.com/';
     const LOGIN_HOST = 'https://bufferapp.com/';
-    const TIMEOUT = 6.0;
 
     protected $client;
     protected $client_key;
     protected $client_secret;
     protected $redirect_uri;
+    protected $timeout;
+    protected $retries;
 
     public function __construct()
     {
         $this->client_key = config('buffer.client_id');
         $this->client_secret = config('buffer.client_secret');
         $this->redirect_uri = config('buffer.redirect_uri');
+        $this->timeout = config('buffer.timeout');
+        $this->retries = config('buffer.retries');
+
+        $handlerstack = HandlerStack::create();
+        $handlerstack->push(Middleware::retry(function($retry, $request, $value, $reason)
+        {
+            if ($value !== null) { return false; }
+            return $retry < $this->retries;
+        }));
 
     	$this->client = new Client([
+            'handler' => $handlerstack,
     	    'base_uri' => self::API_HOST,
-    	    'timeout'  => self::TIMEOUT,
-    	]);	
+    	    'timeout'  => $this->timeout,
+    	]);
     }
 
     /**
     * Get authorization url for oauth
-    * 
+    *
     * @return String
     */
     public function getLoginUrl()
@@ -40,7 +53,7 @@ class Buffer
 
     /**
     * Get user's access token and basic info
-    * 
+    *
     * @param string $code
     */
     public function getAccessToken($code)
@@ -84,8 +97,8 @@ class Buffer
 
     /**
     * Make POST calls to the API
-    * 
-    * @param  string  $path          
+    *
+    * @param  string  $path
     * @param  boolean $authorization [Use access token query params]
     * @param  array   $parameters    [Optional query parameters]
     * @return Array
@@ -98,7 +111,7 @@ class Buffer
     	    $query = [
     	        'client_id' => $this->client_key,
     	    	'client_secret' => $this->client_secret,
-    	    	'redirect_uri' => $this->redirect_uri,			 
+    	    	'redirect_uri' => $this->redirect_uri,
     	    	'grant_type' => 'authorization_code',
     	    ];
 
@@ -111,15 +124,15 @@ class Buffer
     	    ]);
 
             return $this->toArray($response);
-    	} 
+    	}
     	catch (ClientException $e) {
     	    return $this->toArray($e->getResponse());
-        }    	
+        }
     }
 
     /**
     * Make GET calls to the API
-    * 
+    *
     * @param  string $path
     * @param  array  $parameters [Query parameters]
     * @return Array
@@ -140,7 +153,7 @@ class Buffer
 
     /**
     * Convert API response to array
-    * 
+    *
     * @param  Object $response
     * @return Array
     */
@@ -149,7 +162,3 @@ class Buffer
     	return json_decode($response->getBody()->getContents(), true);
     }
 }
-
-
-
-
